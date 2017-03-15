@@ -100,10 +100,10 @@ def rotate():
         PIECE.shape = rotated_piece
 
 
-def parse_moves(moves, reward):
+def parse_moves(moves):
     global GAMMA
-    for i in reversed(range(len(moves))):
-        moves[i]['reward'] = GAMMA ** i * reward
+    for i in range(1, len(moves)):
+        moves[i-1]['board_t1'] = moves[i]['board']
 
     return moves
 
@@ -111,19 +111,22 @@ def parse_moves(moves, reward):
 def main():
     global PIECE
     global BOARD
+    global SCORE
+
+    counter = 0
 
     pygame.init()
     SCREEN.fill(WHITE)
 
-    agent = LearningAgent(exploration_rate=.75)
+    agent = LearningAgent(exploration_rate=.5)
     agent.load()
 
     while not GAME_OVER:
         BOARD = get_initial_board()
         PIECE = get_new_piece()
+        moves = []
 
         while not GAME_OVER and can_fit(BOARD, PIECE):
-            moves = []
             while can_fall(BOARD, PIECE) and not GAME_OVER:
                 PIECE.y += 1
 
@@ -134,15 +137,23 @@ def main():
                 action = agent.get_action(temp_board)
                 take_action(action)
 
-                move = {'board': temp_board, 'action': action}
+                move = {'board': temp_board, 'action': action, 'reward': 10}
                 moves.append(move)
+                counter += 1
+                if counter == 1000:
+                    agent.learn()
+                    counter = 0
 
             BOARD = add_to_board(BOARD, PIECE)
             BOARD, reward = check_lines(BOARD)
+            moves[-1]['reward'] += reward
             PIECE = get_new_piece()
 
-            parsed_moves = parse_moves(moves, reward)
-            agent.learn(parsed_moves)
+        parsed_moves = parse_moves(moves)
+        agent.memorize(parsed_moves)
+        #agent.learn()
+
+
 
         print_board(BOARD)
 

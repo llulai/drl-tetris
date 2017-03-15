@@ -160,12 +160,14 @@ def can_fit(board, piece, dy=0, dx=0, rotated=False):
 
 
 def check_lines(board):
-    reward = 0
+    cleared_lines = 0
     new_board = deepcopy(board)
     for row in range(len(board)):
         if _check_row(board[row]):
             new_board = clear_row(board, row)
-            reward += 1
+            cleared_lines += 1
+
+    reward = 100 * (cleared_lines ** 2)
 
     return new_board, reward
 
